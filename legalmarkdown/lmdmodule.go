@@ -1,10 +1,8 @@
 package legalmarkdown
 
 import (
-	"fmt"
-	"github.com/eris-ltd/decerver/interfaces/core"
-	"github.com/eris-ltd/decerver/interfaces/events"
 	"github.com/eris-ltd/decerver/interfaces/modules"
+	"github.com/eris-ltd/decerver/interfaces/scripting"
 	"github.com/eris-ltd/legalmarkdown/lmd"
 )
 
@@ -19,14 +17,9 @@ type LmdApi struct {
 //
 // the returned string will be a PDF which can be written or
 // displayed by an PDF reader.
-func (lmda *LmdApi) Compile(contents, params string) modules.JsObject {
-	fmt.Println("Contents: " + contents)
-	fmt.Println("Params: " + params)
+func (lmda *LmdApi) Compile(contents, params string) scripting.SObject {
 	res := lmd.RawMarkdownToPDF(contents, params)
-	fmt.Println("Nice... " + res)
-
-	//return modules.JsReturnValNoErr(res);
-	return nil
+	return scripting.JsReturnValNoErr(res)
 }
 
 // implements decerver-interface module
@@ -39,8 +32,8 @@ func NewLmdModule() *LmdModule {
 	return &LmdModule{lmdApi}
 }
 
-func (mod *LmdModule) Register(fileIO core.FileIO, rm core.RuntimeManager, eReg events.EventRegistry) error {
-	rm.RegisterApiObject("lmd", mod.api)
+func (mod *LmdModule) Register(mapi modules.DecerverModuleApi) error {
+	mapi.RegisterRuntimeObject("lmd", mod.api)
 	return nil
 }
 
@@ -77,9 +70,10 @@ func (mod *LmdModule) Name() string {
 	return "lmd"
 }
 
-func (mod *LmdModule) Subscribe(name string, event string, target string) chan events.Event {
+func (mod *LmdModule) Subscribe(name string, event string, target string) error {
 	return nil
 }
 
 func (mod *LmdModule) UnSubscribe(name string) {
+	
 }

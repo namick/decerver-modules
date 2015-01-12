@@ -10,28 +10,15 @@ import (
 	"github.com/eris-ltd/go-ipfs/util"
 	"github.com/eris-ltd/go-ipfs/util/debugerror"
 	"os"
-	"os/user"
 	"path"
 	"path/filepath"
 )
 
 // Keep this higher then 1024
-const nBitsForKeypairDefault = 4096
+const nBitsForKeypairDefault = 2048
 
-func (ipfs *Ipfs) Init() error {
-	fmt.Println("IPFS: initializing")
-	
-	// TODO have had minor issues with path dependent config. Will
-	// fix. Sticking to ~/.go-ipfs for now
-	usr, uErr := user.Current()
-	
-	if uErr != nil {
-		return uErr
-	}
-	
-	rootDir := path.Join(usr.HomeDir, ".go-ipfs")
-	cfg, err := config.Load(path.Join(rootDir,"config"))
-
+func (ipfs *Ipfs) Init(rootDir string) error {
+	cfg, err := config.Load(path.Join(rootDir, "config"))
 	if err != nil {
 		fmt.Println("IPFS config does not exist, creating... (this may take a few seconds)")
 		cfName, cErr := config.Filename(rootDir)
@@ -43,35 +30,29 @@ func (ipfs *Ipfs) Init() error {
 			return err
 		}
 	}
-	
+	// TODO auto inject our peer server into the config.
 	// Make this the active configuration file.
 	ipfs.cfg = cfg
 	// TODO add settings later.
 	util.SetLogLevel("*", "debug")
 	fmt.Println("IPFS: init done")
-	
 	return nil
 }
-
 func initConfig(configFilename string) (*config.Config, error) {
 	// TODO No overriding atm.
 	ds, err := datastoreConfig("")
 	if err != nil {
 		return nil, err
 	}
-
 	identity, err := identityConfig(nBitsForKeypairDefault)
 	if err != nil {
 		return nil, err
 	}
-
 	logConfig, err := initLogs("") // TODO allow user to override dir
 	if err != nil {
 		return nil, err
 	}
-
 	conf := &config.Config{
-
 		// setup the node's default addresses.
 		// Note: two swarm listen addrs, one tcp, one utp.
 		Addresses: config.Addresses{
@@ -81,56 +62,28 @@ func initConfig(configFilename string) (*config.Config, error) {
 			},
 			API: "/ip4/127.0.0.1/tcp/5001",
 		},
-
 		Bootstrap: []*config.BootstrapPeer{
 			&config.BootstrapPeer{ // Use these hardcoded bootstrap peers for now.
 				// mars.i.ipfs.io
-				PeerID:  "QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
-				Address: "/ip4/104.131.131.82/tcp/4001",
-			},
-			&config.BootstrapPeer{
-				// Neptune
-				PeerID:  "QmSoLnSGccFuZQJzRadHn95W2CrSFmZuTdDWP8HXaHca9z",
-				Address: "/ip4/104.236.176.52/tcp/4001",
-			},
-			&config.BootstrapPeer{
-				// Pluto
-				PeerID:  "QmSoLpPVmHKQ4XTPdz8tjDFgdeRFkpV8JgYq8JVJ69RrZm",
-				Address: "/ip4/104.236.179.241/tcp/4001",
-			},
-			&config.BootstrapPeer{
-				// Uranus
-				PeerID:  "QmSoLueR4xBeUbY9WZ9xGUUxunbKWcrNFTDAadQJmocnWm",
-				Address: "/ip4/162.243.248.213/tcp/4001",
-			},
-			&config.BootstrapPeer{
-				// Saturn
-				PeerID:  "QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
-				Address: "/ip4/128.199.219.111/tcp/4001",
+				PeerID:  "QmT6U3tyrUkinji19MTuN8S1vbjMxifghyr7rH72ZuPWEp",
+				Address: "/ip4/92.243.15.73/tcp/4001",
 			},
 		},
-
 		Datastore: ds,
-
-		Logs: logConfig,
-
-		Identity: identity,
-
+		Logs:      logConfig,
+		Identity:  identity,
 		// setup the node mount points.
 		Mounts: config.Mounts{
 			IPFS: "/ipfs",
 			IPNS: "/ipns",
 		},
-
 		// tracking ipfs version used to generate the init folder and adding
 		// update checker default setting.
 		Version: config.VersionDefaultValue(),
 	}
-
 	if err := config.WriteConfigFile(configFilename, conf); err != nil {
 		return nil, err
 	}
-
 	return conf, nil
 }
 
@@ -141,14 +94,12 @@ func identityConfig(nbits int) (config.Identity, error) {
 	if nbits < 1024 {
 		return ident, debugerror.New("Bitsize less than 1024 is considered unsafe.")
 	}
-
 	fmt.Printf("generating key pair...")
 	sk, pk, err := crypto.GenerateKeyPair(crypto.RSA, nbits)
 	if err != nil {
 		return ident, err
 	}
 	fmt.Printf("done\n")
-
 	// currently storing key unencrypted. in the future we need to encrypt it.
 	// TODO(security)
 	skbytes, err := sk.Bytes()
@@ -156,7 +107,6 @@ func identityConfig(nbits int) (config.Identity, error) {
 		return ident, err
 	}
 	ident.PrivKey = base64.StdEncoding.EncodeToString(skbytes)
-
 	id, err := peer.IDFromPubKey(pk)
 	if err != nil {
 		return ident, err
@@ -196,7 +146,6 @@ func initCheckDir(path string) error {
 	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		return err
 	}
-
 	// Check the directory is writeable
 	if f, err := os.Create(filepath.Join(path, "._check_writeable")); err == nil {
 		os.Remove(f.Name())
@@ -205,7 +154,6 @@ func initCheckDir(path string) error {
 	}
 	return nil
 }
-
 func datastoreConfig(dspath string) (config.Datastore, error) {
 	ds := config.Datastore{}
 	if len(dspath) == 0 {
@@ -217,11 +165,9 @@ func datastoreConfig(dspath string) (config.Datastore, error) {
 	}
 	ds.Path = dspath
 	ds.Type = "leveldb"
-
 	err := initCheckDir(dspath)
 	if err != nil {
 		return ds, debugerror.Errorf("datastore: %s", err)
 	}
-
 	return ds, nil
 }

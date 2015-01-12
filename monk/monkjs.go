@@ -26,9 +26,9 @@ func NewMonkJs() *MonkJs {
 }
 
 // register the module with the decerver javascript vm
-func (mjs *MonkJs) Register(fileIO core.FileIO, rm core.RuntimeManager, eReg events.EventRegistry) error {
-	rm.RegisterApiObject("monk", mjs)
-	rm.RegisterApiScript(eslScript)
+func (mjs *MonkJs) Register(dma modules.DecerverModuleApi) error {
+	dma.RegisterRuntimeObject("monk", mjs)
+	dma.RegisterRuntimeScript(eslScript)
 	return nil
 }
 

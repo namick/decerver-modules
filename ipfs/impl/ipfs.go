@@ -4,24 +4,25 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/eris-ltd/decerver/interfaces/modules"
+	"github.com/eris-ltd/go-ipfs/Godeps/_workspace/src/code.google.com/p/go.net/context"
 	proto "github.com/eris-ltd/go-ipfs/Godeps/_workspace/src/code.google.com/p/goprotobuf/proto"
 	mh "github.com/eris-ltd/go-ipfs/Godeps/_workspace/src/github.com/jbenet/go-multihash"
 	"github.com/eris-ltd/go-ipfs/blocks"
-	mdag "github.com/eris-ltd/go-ipfs/merkledag"
-	uio "github.com/eris-ltd/go-ipfs/unixfs/io"
-	ftpb "github.com/eris-ltd/go-ipfs/unixfs/pb"
-	"github.com/eris-ltd/go-ipfs/util"
-	"github.com/eris-ltd/go-ipfs/Godeps/_workspace/src/code.google.com/p/go.net/context"
 	"github.com/eris-ltd/go-ipfs/commands"
 	"github.com/eris-ltd/go-ipfs/config"
 	"github.com/eris-ltd/go-ipfs/core"
 	cmds "github.com/eris-ltd/go-ipfs/core/commands"
+	mdag "github.com/eris-ltd/go-ipfs/merkledag"
+	uio "github.com/eris-ltd/go-ipfs/unixfs/io"
+	ftpb "github.com/eris-ltd/go-ipfs/unixfs/pb"
+	"github.com/eris-ltd/go-ipfs/util"
 	"io"
 	"os"
 	"strings"
 	"time"
 )
+
+type IMap map[string]interface{}
 
 var StreamSize = 1024
 
@@ -31,7 +32,6 @@ type Ipfs struct {
 }
 
 // NOTE: Init is in the init file
-
 func (ipfs *Ipfs) Start() error {
 	ctx := context.Background()
 	n, err := core.NewIpfsNode(ctx, ipfs.cfg, true)
@@ -39,12 +39,11 @@ func (ipfs *Ipfs) Start() error {
 		return err
 	}
 	ipfs.node = n
-
 	return nil
 }
 
 // TODO: UDP socket won't close
-// https://github.com/jbenet/go-ipfs/issues/389
+// https://github.com/eris-ltd/go-ipfs/issues/389
 func (ipfs *Ipfs) Shutdown() error {
 	// TODO close
 	if n := ipfs.node.Network; n != nil {
@@ -148,7 +147,7 @@ func (ipfs *Ipfs) GetStream(hash string) (chan []byte, error) {
 }
 
 // TODO: depth
-func (ipfs *Ipfs) GetTree(hash string, depth int) (modules.JsObject, error) {
+func (ipfs *Ipfs) GetTree(hash string, depth int) (IMap, error) {
 	fpath, err := hexPath2B58(hash)
 	if err != nil {
 		return nil, err
@@ -296,14 +295,14 @@ func hexPath2B58(p string) (string, error) {
 	}
 	return spl[0], nil
 }
-func getTreeNode(name, hash string) modules.JsObject {
-	obj := make(modules.JsObject)
-	obj["Nodes"] = make([]modules.JsObject, 0)
+func getTreeNode(name, hash string) IMap {
+	obj := make(IMap)
+	obj["Nodes"] = make([]IMap, 0)
 	obj["Name"] = name
 	obj["Hash"] = hash
 	return obj
 }
-func grabRefs(n *core.IpfsNode, nd *mdag.Node, tree modules.JsObject) error {
+func grabRefs(n *core.IpfsNode, nd *mdag.Node, tree IMap) error {
 	for _, link := range nd.Links {
 		h := link.Hash
 		newNode := getTreeNode(link.Name, h.B58String())
@@ -316,7 +315,7 @@ func grabRefs(n *core.IpfsNode, nd *mdag.Node, tree modules.JsObject) error {
 		if err != nil {
 			return err
 		}
-		nds := tree["Nodes"].([]modules.JsObject)
+		nds := tree["Nodes"].([]IMap)
 		nds = append(nds, newNode)
 	}
 	return nil
