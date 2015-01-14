@@ -2,9 +2,8 @@ package monkjs
 
 import (
 	"fmt"
-	"github.com/eris-ltd/decerver/interfaces/core"
-	"github.com/eris-ltd/decerver/interfaces/events"
 	"github.com/eris-ltd/decerver/interfaces/modules"
+	"github.com/eris-ltd/decerver/interfaces/scripting"
 	"github.com/eris-ltd/thelonious/monk"
 )
 
@@ -15,186 +14,195 @@ type TempProps struct {
 }
 
 // implements decerver-interfaces Module
-type MonkJs struct {
-	mm   *monk.MonkModule
+type MonkModule struct {
+	monk *monk.MonkModule
 	temp *TempProps
+	mapi *MonkApi
 }
 
-func NewMonkJs() *MonkJs {
-	monkModule := monk.NewMonk(nil)
-	return &MonkJs{monkModule, &TempProps{}}
+type MonkApi struct {
+	monk *monk.MonkModule
 }
 
-// register the module with the decerver javascript vm
-func (mjs *MonkJs) Register(dma modules.DecerverModuleApi) error {
-	dma.RegisterRuntimeObject("monk", mjs)
+func NewMonkModule() *MonkModule {
+	monk := monk.NewMonk(nil)
+	mapi := &MonkApi{monk}
+	return &MonkModule{monk, &TempProps{}, mapi}
+	
+}
+
+// Register the module.
+func (mm *MonkModule) Register(dma modules.DecerverModuleApi) error {
+	dma.RegisterRuntimeObject("monk", mm.mapi)
 	dma.RegisterRuntimeScript(eslScript)
 	return nil
 }
 
-// initialize an monkchain
-// it may or may not already have an ethereum instance
-// basically gives you a pipe, local keyMang, and reactor
-func (mjs *MonkJs) Init() error {
-	return nil // mjs.mm.Init()
+// Initialize the module (does nothing for monk)
+func (mm *MonkModule) Init() error {
+	return nil
 }
 
-// start the ethereum node
-func (mjs *MonkJs) Start() error {
+// Start the module (does nothing for monk)
+func (mm *MonkModule) Start() error {
 	return nil // mjs.mm.Start()
 }
 
-func (mjs *MonkJs) Shutdown() error {
-	return mjs.mm.Shutdown()
+// Shut down the module.
+func (mm *MonkModule) Shutdown() error {
+	return mm.monk.Shutdown()
 }
 
-func (mjs *MonkJs) Restart() error {
-	err := mjs.Shutdown()
+func (mm *MonkModule) Restart() error {
+	err := mm.Shutdown()
 
 	if err != nil {
 		return nil
 	}
-	mjs.mm = monk.NewMonk(nil)
+	mm.monk = monk.NewMonk(nil)
 
 	// Inject the config:
-	mjs.mm.SetProperty("ChainId", mjs.temp.ChainId)
-	mjs.mm.SetProperty("RemoteHost", mjs.temp.RemoteHost)
-	mjs.mm.SetProperty("RemotePort", mjs.temp.RemotePort)
+	mm.monk.SetProperty("ChainId", mm.temp.ChainId)
+	mm.monk.SetProperty("RemoteHost", mm.temp.RemoteHost)
+	mm.monk.SetProperty("RemotePort", mm.temp.RemotePort)
 
-	mjs.mm.Init()
+	mm.monk.Init()
 
-	err2 := mjs.mm.Start()
+	err2 := mm.monk.Start()
 
-	mjs.temp.ChainId = ""
-	mjs.temp.RemoteHost = ""
-	mjs.temp.RemotePort = 0
+	mm.temp.ChainId = ""
+	mm.temp.RemoteHost = ""
+	mm.temp.RemotePort = 0
 
 	return err2
 }
 
-func (mjs *MonkJs) SetProperty(name string, data interface{}) {
+func (mm *MonkModule) SetProperty(name string, data interface{}) {
 	if name == "ChainId" {
 		dt, dtok := data.(string)
 		if !dtok {
 			fmt.Println("Setting property 'ChainId' to an undefined value. Should be string")
 			return
 		}
-		mjs.temp.ChainId = dt
+		mm.temp.ChainId = dt
 	} else if name == "RemoteHost" {
 		dt2, dtok2 := data.(string)
 		if !dtok2 {
 			fmt.Println("Setting property 'RemoteHost' to an undefined value. Should be string")
 			return
 		}
-		mjs.temp.RemoteHost = dt2
+		mm.temp.RemoteHost = dt2
 	} else if name == "RemotePort" {
 		dt3, dtok3 := data.(int)
 		if !dtok3 {
 			fmt.Println("Setting property 'RemotePort' to an undefined value. Should be int")
 			return
 		}
-		mjs.temp.RemotePort = dt3
+		mm.temp.RemotePort = dt3
 	} else {
 		fmt.Println("Setting undefined property.")
 	}
 
 }
 
-func (mjs *MonkJs) Property(name string) interface{} {
+func (mm *MonkModule) Property(name string) interface{} {
 	return nil
 }
 
 // ReadConfig and WriteConfig implemented in config.go
 
 // What module is this?
-func (mjs *MonkJs) Name() string {
+func (mm *MonkModule) Name() string {
 	return "monk"
 }
 
-func (mjs *MonkJs) Subscribe(name, event, target string) chan events.Event {
-	return mjs.mm.Subscribe(name, event, target)
+// TODO update this.
+func (mm *MonkModule) Subscribe(name, event, target string) error {
+	mm.monk.Subscribe(name, event, target)
+	return nil	
 }
 
-func (mjs *MonkJs) UnSubscribe(name string) {
-	mjs.mm.UnSubscribe(name)
+func (mm *MonkModule) UnSubscribe(name string) {
+	mm.monk.UnSubscribe(name)
 }
 
 /*
    Wrapper so module satisfies Blockchain
 */
 
-func (mjs *MonkJs) WorldState() modules.JsObject {
-	ws := mjs.mm.WorldState()
-	return modules.JsReturnVal(ws, nil)
+// TODO not many errors is returned by the monk object.
+
+func (mapi *MonkApi) WorldState() scripting.SObject {
+	ws := mapi.monk.WorldState()
+	return scripting.JsReturnValNoErr(ws)
 }
 
-func (mjs *MonkJs) State() modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.State(), nil)
+func (mapi *MonkApi) State() scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.State())
 }
 
-func (mjs *MonkJs) Storage(target string) modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.Storage(target), nil)
+func (mapi *MonkApi) Storage(target string) scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.Storage(target))
 }
 
-func (mjs *MonkJs) Account(target string) modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.Account(target), nil)
+func (mapi *MonkApi) Account(target string) scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.Account(target))
 }
 
-func (mjs *MonkJs) StorageAt(target, storage string) modules.JsObject {
-	ret := mjs.mm.StorageAt(target, storage)
+func (mapi *MonkApi) StorageAt(target, storage string) scripting.SObject {
+	ret := mapi.monk.StorageAt(target, storage)
 	if ret == "" || ret == "0x" {
 		ret = "0x0"
 	} else {
 		ret = "0x" + ret
 	}
-
-	return modules.JsReturnVal(ret, nil)
+	return scripting.JsReturnValNoErr(ret)
 }
 
-func (mjs *MonkJs) BlockCount() modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.BlockCount(), nil)
+func (mapi *MonkApi) BlockCount() scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.BlockCount())
 }
 
-func (mjs *MonkJs) LatestBlock() modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.LatestBlock(), nil)
+func (mapi *MonkApi) LatestBlock() scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.LatestBlock())
 }
 
-func (mjs *MonkJs) Block(hash string) modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.Block(hash), nil)
+func (mapi *MonkApi) Block(hash string) scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.Block(hash))
 }
 
-func (mjs *MonkJs) IsScript(target string) modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.IsScript(target), nil)
+func (mapi *MonkApi) IsScript(target string) scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.IsScript(target))
 }
 
-func (mjs *MonkJs) Tx(addr, amt string) modules.JsObject {
-	hash, err := mjs.mm.Tx(addr, amt)
-	var ret modules.JsObject
+func (mapi *MonkApi) Tx(addr, amt string) scripting.SObject {
+	hash, err := mapi.monk.Tx(addr, amt)
+	var ret scripting.SObject
 	if err == nil {
-		ret = make(modules.JsObject)
+		ret = make(scripting.SObject)
 		ret["Hash"] = hash
 		ret["Address"] = ""
 		ret["Error"] = ""
 	}
-	return modules.JsReturnVal(ret, err)
+	return scripting.JsReturnVal(ret, err)
 }
 
-func (mjs *MonkJs) Msg(addr string, data []interface{}) modules.JsObject {
-	fmt.Printf("MESSAGE DATA: %v\n",data)
+func (mapi *MonkApi) Msg(addr string, data []interface{}) scripting.SObject {
+	fmt.Printf("MESSAGE DATA: %v\n", data)
 	indata := make([]string, 0)
-	
+
 	if data != nil && len(data) > 0 {
 		for _, d := range data {
 			str, ok := d.(string)
 			if !ok {
-				return modules.JsReturnValErr(fmt.Errorf("Msg indata is not an array of strings"))
+				return scripting.JsReturnValErr(fmt.Errorf("Msg indata is not an array of strings"))
 			}
 			indata = append(indata, str)
 		}
 	}
-	hash, err := mjs.mm.Msg(addr, indata)
+	hash, err := mapi.monk.Msg(addr, indata)
 	fmt.Println("HASH: " + hash)
-	ret := make(modules.JsObject)
+	ret := make(scripting.SObject)
 	if err == nil {
 		ret["Hash"] = "0x" + hash // Might as well
 		ret["Address"] = ""
@@ -204,78 +212,94 @@ func (mjs *MonkJs) Msg(addr string, data []interface{}) modules.JsObject {
 		ret["Address"] = ""
 		ret["Error"] = err.Error()
 	}
-	return modules.JsReturnVal(ret, err)
+	return scripting.JsReturnVal(ret, err)
 }
-
-func (mjs *MonkJs) Script(file, lang string) modules.JsObject {
-	addr, err := mjs.mm.Script(file, lang)
-	var ret modules.JsObject
+/*
+func (mapi *MonkApi) Script(file, lang string) scripting.SObject {
+	addr, err := mapi.monk.Script(file, lang)
+	var ret scripting.SObject
 	if err == nil {
-		ret = make(modules.JsObject)
+		ret = make(scripting.SObject)
 		ret["Hash"] = ""
 		ret["Address"] = addr
 		ret["Error"] = ""
 	}
-	return modules.JsReturnVal(ret, err)
+	return scripting.JsReturnVal(ret, err)
+}
+*/
+func (mapi *MonkApi) Commit() scripting.SObject {
+	mapi.monk.Commit()
+	return scripting.JsReturnValNoErr(nil)
 }
 
-func (mjs *MonkJs) Commit() modules.JsObject {
-	mjs.mm.Commit()
-	return modules.JsReturnVal(nil, nil)
+func (mapi *MonkApi) AutoCommit(toggle bool) scripting.SObject {
+	mapi.monk.AutoCommit(toggle)
+	return scripting.JsReturnValNoErr(nil)
 }
 
-func (mjs *MonkJs) AutoCommit(toggle bool) modules.JsObject {
-	mjs.mm.AutoCommit(toggle)
-	return modules.JsReturnVal(nil, nil)
-}
-
-func (mjs *MonkJs) IsAutocommit() modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.IsAutocommit(), nil)
+func (mapi *MonkApi) IsAutocommit() scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.IsAutocommit())
 }
 
 /*
    Module should also satisfy KeyManager
 */
 
-func (mjs *MonkJs) ActiveAddress() modules.JsObject {
-	return modules.JsReturnVal(mjs.mm.ActiveAddress(), nil)
+func (mapi *MonkApi) ActiveAddress() scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.ActiveAddress())
 }
 
-func (mjs *MonkJs) Addresses() modules.JsObject {
-	count := mjs.mm.AddressCount()
-	addresses := make(modules.JsObject)
+func (mapi *MonkApi) Addresses() scripting.SObject {
+	count := mapi.monk.AddressCount()
+	addresses := make(scripting.SObject)
 	array := make([]string, count)
 
 	for i := 0; i < count; i++ {
-		addr, _ := mjs.mm.Address(i)
+		addr, _ := mapi.monk.Address(i)
 		array[i] = addr
 	}
 	addresses["Addresses"] = array
-	return modules.JsReturnVal(addresses, nil)
+	return scripting.JsReturnValNoErr(addresses)
 }
 
-func (mjs *MonkJs) SetAddress(addr string) modules.JsObject {
-	err := mjs.mm.SetAddress(addr)
+func (mapi *MonkApi) SetAddress(addr string) scripting.SObject {
+	err := mapi.monk.SetAddress(addr)
 	if err != nil {
-		return modules.JsReturnValErr(err)
+		return scripting.JsReturnValErr(err)
 	} else {
 		// No error means success.
-		return modules.JsReturnValNoErr(nil)
+		return scripting.JsReturnValNoErr(nil)
 	}
 }
 
-// TODO Not used atm. Think about this.
-func (mjs *MonkJs) SetAddressN(n int) modules.JsObject {
-	mjs.mm.SetAddressN(n)
-	return modules.JsReturnValNoErr(nil)
+// TODO Js runtime returns weird numbers.
+func (mapi *MonkApi) SetAddressN(n interface{}) scripting.SObject {
+	// TODO Safe conversion
+	switch v := n.(type){
+	case int:
+		mapi.monk.SetAddressN(v)
+	case uint:
+		mapi.monk.SetAddressN(int(v))	
+	case int64:
+		mapi.monk.SetAddressN(int(v))
+	case uint64:
+		mapi.monk.SetAddressN(int(v))
+	case float32:
+		mapi.monk.SetAddressN(int(v))
+	case float64:
+		mapi.monk.SetAddressN(int(v))
+	default:
+		return scripting.JsReturnValErr(fmt.Errorf("Value is not a proper number: %v\n",n))
+	}
+	return scripting.JsReturnValNoErr(nil)
 }
 
-func (mjs *MonkJs) NewAddress(set bool) modules.JsObject {
-	return modules.JsReturnValNoErr(mjs.mm.NewAddress(set))
+func (mapi *MonkApi) NewAddress(set bool) scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.NewAddress(set))
 }
 
-func (mjs *MonkJs) AddressCount() modules.JsObject {
-	return modules.JsReturnValNoErr(mjs.mm.AddressCount())
+func (mapi *MonkApi) AddressCount() scripting.SObject {
+	return scripting.JsReturnValNoErr(mapi.monk.AddressCount())
 }
 
 var eslScript string = `

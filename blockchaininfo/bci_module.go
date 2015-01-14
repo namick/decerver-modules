@@ -44,6 +44,14 @@ type BlkChainInfo struct {
 	chans           map[string]chan events.Event
 }
 
+type BCIModule struct {
+	
+}
+
+type BCIApi struct {
+	
+}
+
 // NewBlkChainInfo simply returns a pointer to a blank struct
 func NewBlkChainInfo() *BlkChainInfo {
 	return &BlkChainInfo{}
@@ -188,7 +196,6 @@ func (b *BlkChainInfo) ChainId() (string, error) {
    blockchain functions to satisfy interface. see:
        * https://github.com/eris-ltd/decerver-interfaces/blob/master/modules/blockchain.go
        * https://github.com/eris-ltd/decerver-interfaces/blob/master/modules/modules.go
-
 */
 
 // WorldState is not supported

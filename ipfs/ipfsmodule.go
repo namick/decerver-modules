@@ -129,6 +129,13 @@ func (api *IpfsApi) GetTree(hash string, depth int) scripting.SObject {
 	return scripting.JsReturnVal(tree, err)
 }
 
+// Deprecated. Use PushBlock instead.
+func (api *IpfsApi) PushBlockString(block string) scripting.SObject {
+	fmt.Println("IPFS Module: Use of deprecated function 'PushBlockString'.")
+	block, err := api.ipfs.PushBlockString(block)
+	return scripting.JsReturnVal(block, err)
+}
+
 func (api *IpfsApi) PushBlock(block string) scripting.SObject {
 	block, err := api.ipfs.PushBlockString(block)
 	return scripting.JsReturnVal(block, err)
