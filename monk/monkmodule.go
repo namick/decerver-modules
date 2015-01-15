@@ -11,6 +11,7 @@ type TempProps struct {
 	ChainId    string
 	RemoteHost string
 	RemotePort int
+	RootDir    string
 }
 
 // implements decerver-interfaces Module
@@ -28,7 +29,6 @@ func NewMonkModule() *MonkModule {
 	monk := monk.NewMonk(nil)
 	mapi := &MonkApi{monk}
 	return &MonkModule{monk, &TempProps{}, mapi}
-	
 }
 
 // Register the module.
@@ -55,24 +55,27 @@ func (mm *MonkModule) Shutdown() error {
 
 func (mm *MonkModule) Restart() error {
 	err := mm.Shutdown()
-
+	
 	if err != nil {
 		return nil
 	}
 	mm.monk = monk.NewMonk(nil)
-
+	mm.mapi.monk = mm.monk
+	
 	// Inject the config:
+	mm.monk.SetProperty("RootDir", mm.temp.RootDir)
 	mm.monk.SetProperty("ChainId", mm.temp.ChainId)
 	mm.monk.SetProperty("RemoteHost", mm.temp.RemoteHost)
 	mm.monk.SetProperty("RemotePort", mm.temp.RemotePort)
-
+	
 	mm.monk.Init()
-
+	
 	err2 := mm.monk.Start()
-
+	
 	mm.temp.ChainId = ""
 	mm.temp.RemoteHost = ""
 	mm.temp.RemotePort = 0
+	mm.temp.RootDir = ""
 
 	return err2
 }
@@ -81,28 +84,34 @@ func (mm *MonkModule) SetProperty(name string, data interface{}) {
 	if name == "ChainId" {
 		dt, dtok := data.(string)
 		if !dtok {
-			fmt.Println("Setting property 'ChainId' to an undefined value. Should be string")
+			fmt.Println("Setting property 'ChainId' to an undefined value. Should be 'string'.")
 			return
 		}
 		mm.temp.ChainId = dt
 	} else if name == "RemoteHost" {
 		dt2, dtok2 := data.(string)
 		if !dtok2 {
-			fmt.Println("Setting property 'RemoteHost' to an undefined value. Should be string")
+			fmt.Println("Setting property 'RemoteHost' to an undefined value. Should be 'string'.")
 			return
 		}
 		mm.temp.RemoteHost = dt2
 	} else if name == "RemotePort" {
 		dt3, dtok3 := data.(int)
 		if !dtok3 {
-			fmt.Println("Setting property 'RemotePort' to an undefined value. Should be int")
+			fmt.Println("Setting property 'RemotePort' to an undefined value. Should be 'int'.")
 			return
 		}
 		mm.temp.RemotePort = dt3
+	} else if name == "RootDir" {
+		dt4, dtok4 := data.(string)
+		if !dtok4 {
+			fmt.Println("Setting property 'RootDir' to an undefined value. Should be 'string'.")
+			return
+		}
+		mm.temp.RootDir = dt4
 	} else {
 		fmt.Println("Setting undefined property.")
 	}
-
 }
 
 func (mm *MonkModule) Property(name string) interface{} {
@@ -119,7 +128,7 @@ func (mm *MonkModule) Name() string {
 // TODO update this.
 func (mm *MonkModule) Subscribe(name, event, target string) error {
 	mm.monk.Subscribe(name, event, target)
-	return nil	
+	return nil
 }
 
 func (mm *MonkModule) UnSubscribe(name string) {
@@ -214,6 +223,7 @@ func (mapi *MonkApi) Msg(addr string, data []interface{}) scripting.SObject {
 	}
 	return scripting.JsReturnVal(ret, err)
 }
+
 /*
 func (mapi *MonkApi) Script(file, lang string) scripting.SObject {
 	addr, err := mapi.monk.Script(file, lang)
@@ -275,11 +285,11 @@ func (mapi *MonkApi) SetAddress(addr string) scripting.SObject {
 // TODO Js runtime returns weird numbers.
 func (mapi *MonkApi) SetAddressN(n interface{}) scripting.SObject {
 	// TODO Safe conversion
-	switch v := n.(type){
+	switch v := n.(type) {
 	case int:
 		mapi.monk.SetAddressN(v)
 	case uint:
-		mapi.monk.SetAddressN(int(v))	
+		mapi.monk.SetAddressN(int(v))
 	case int64:
 		mapi.monk.SetAddressN(int(v))
 	case uint64:
@@ -289,7 +299,7 @@ func (mapi *MonkApi) SetAddressN(n interface{}) scripting.SObject {
 	case float64:
 		mapi.monk.SetAddressN(int(v))
 	default:
-		return scripting.JsReturnValErr(fmt.Errorf("Value is not a proper number: %v\n",n))
+		return scripting.JsReturnValErr(fmt.Errorf("Value is not a proper number: %v\n", n))
 	}
 	return scripting.JsReturnValNoErr(nil)
 }
