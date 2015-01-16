@@ -3,6 +3,7 @@ package ipfs
 import (
 	"fmt"
 	"github.com/eris-ltd/decerver-modules/ipfs/impl"
+	"github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/decerver/interfaces/files"
 	"github.com/eris-ltd/decerver/interfaces/modules"
 	"github.com/eris-ltd/decerver/interfaces/scripting"
@@ -100,7 +101,7 @@ func (mod *IpfsModule) Name() string {
 	return "ipfs"
 }
 
-func (mod *IpfsModule) Subscribe(name string, event string, target string) error {
+func (mod *IpfsModule) Subscribe(name string, event string, target string) chan types.Event {
 	return nil
 }
 

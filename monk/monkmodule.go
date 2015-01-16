@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/eris-ltd/decerver/interfaces/modules"
 	"github.com/eris-ltd/decerver/interfaces/scripting"
+	"github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/thelonious/monk"
 )
 
@@ -28,7 +29,11 @@ type MonkApi struct {
 func NewMonkModule() *MonkModule {
 	monk := monk.NewMonk(nil)
 	mapi := &MonkApi{monk}
-	return &MonkModule{monk, &TempProps{}, mapi}
+	return &MonkModule{
+		monk : monk, 
+		temp : &TempProps{}, 
+		mapi : mapi, 
+	}
 }
 
 // Register the module.
@@ -50,6 +55,7 @@ func (mm *MonkModule) Start() error {
 
 // Shut down the module.
 func (mm *MonkModule) Shutdown() error {
+	
 	return mm.monk.Shutdown()
 }
 
@@ -59,6 +65,7 @@ func (mm *MonkModule) Restart() error {
 	if err != nil {
 		return nil
 	}
+	
 	mm.monk = monk.NewMonk(nil)
 	mm.mapi.monk = mm.monk
 	
@@ -126,9 +133,8 @@ func (mm *MonkModule) Name() string {
 }
 
 // TODO update this.
-func (mm *MonkModule) Subscribe(name, event, target string) error {
-	mm.monk.Subscribe(name, event, target)
-	return nil
+func (mm *MonkModule) Subscribe(name, event, target string) chan types.Event {
+	return mm.monk.Subscribe(name, event, target)
 }
 
 func (mm *MonkModule) UnSubscribe(name string) {

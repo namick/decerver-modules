@@ -1,6 +1,7 @@
 package legalmarkdown
 
 import (
+	"github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/decerver/interfaces/modules"
 	"github.com/eris-ltd/decerver/interfaces/scripting"
 	"github.com/eris-ltd/legalmarkdown/lmd"
@@ -70,7 +71,7 @@ func (mod *LmdModule) Name() string {
 	return "lmd"
 }
 
-func (mod *LmdModule) Subscribe(name string, event string, target string) error {
+func (mod *LmdModule) Subscribe(name string, event string, target string) chan types.Event {
 	return nil
 }
 
