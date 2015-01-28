@@ -118,18 +118,19 @@ func (api *IpfsApi) GetBlock(hash string) scripting.SObject {
 	return scripting.JsReturnValNoErr(string(data))
 }
 
-func (api *IpfsApi) GetFile(hash string) scripting.SObject {
-	bts, err := api.ipfs.GetFile(hash)
+func (api *IpfsApi) GetFile(fileName string) scripting.SObject {
+	bts, err := api.ipfs.GetFile(fileName)
 	if err != nil {
 		return scripting.JsReturnValErr(err)
 	}
 	return scripting.JsReturnValNoErr(string(bts))
 }
-
+/*
 func (api *IpfsApi) GetTree(hash string, depth int) scripting.SObject {
 	tree, err := api.ipfs.GetTree(hash, depth)
 	return scripting.JsReturnVal(tree, err)
 }
+*/
 
 // Deprecated. Use PushBlock instead.
 func (api *IpfsApi) PushBlockString(block string) scripting.SObject {
@@ -148,7 +149,21 @@ func (api *IpfsApi) PushFile(fpath string) scripting.SObject {
 	return scripting.JsReturnVal(f, err)
 }
 
+func (api *IpfsApi) Unpin(hash string) scripting.SObject {
+	return scripting.JsReturnValErr(api.ipfs.Unpin(hash))
+}
+
+func (api *IpfsApi) GC() scripting.SObject {
+	return scripting.JsReturnValErr(api.ipfs.GC())
+}
+
+func (api *IpfsApi) GCAsync() scripting.SObject {
+	return scripting.JsReturnValErr(api.ipfs.GCAsync())
+}
+
+/*
 func (api *IpfsApi) PushTree(fpath string, depth int) scripting.SObject {
 	tree, err := api.ipfs.AddTree(fpath, depth)
 	return scripting.JsReturnVal(tree, err)
 }
+*/

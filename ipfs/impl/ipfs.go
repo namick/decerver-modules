@@ -8,7 +8,7 @@ import (
 	"github.com/jbenet/go-ipfs/blocks"
 	"github.com/jbenet/go-ipfs/core"
 	"github.com/jbenet/go-ipfs/core/coreunix"
-	// "github.com/jbenet/go-ipfs/core/corerepo"
+	"github.com/jbenet/go-ipfs/core/corerepo"
 	mdag "github.com/jbenet/go-ipfs/merkledag"
 	// uio "github.com/jbenet/go-ipfs/unixfs/io"
 	fsrepo "github.com/jbenet/go-ipfs/repo/fsrepo"
@@ -145,7 +145,7 @@ func (ipfs *Ipfs) GetStream(hash string) (chan []byte, error) {
 }
 */
 
-// TODO: depth
+/*
 func (ipfs *Ipfs) GetTree(hash string, depth int) (IMap, error) {
 	fpath, err := hexPath2B58(hash)
 	if err != nil {
@@ -163,6 +163,7 @@ func (ipfs *Ipfs) GetTree(hash string, depth int) (IMap, error) {
 	err3 := grabRefs(ipfs.node, nd, tree)
 	return tree, err3
 }
+*/
 
 func (ipfs *Ipfs) AddBlock(data []byte) (string, error) {
 	b := blocks.NewBlock(data)
@@ -187,29 +188,40 @@ func (ipfs *Ipfs) AddFile(fpath string) (string, error) {
 	return "0x" + hex.EncodeToString([]byte(k)), err
 }
 
-func (ipfs *Ipfs) AddTree(fpath string, depth int) (string, error) {
-	/*
-	ff, err := os.Open(fpath)
+func (ipfs *Ipfs) Unpin(hash string) error {
+	k, err := HexToB58(hash)
 	if err != nil {
-		return "", err
+		return err
 	}
-	f, err := openPath(ff, fpath)
-	if err != nil {
-		return "", err
+	pErr := ipfs.node.Pinning.Unpin(util.B58KeyDecode(k),true)
+	if pErr != nil {
+		return pErr
 	}
-	added := &cmds.AddOutput{}
-	nd, err := addDir(ipfs.node, f, added)
-	if err != nil {
-		return "", err
-	}
-	h, err := nd.Multihash()
-	if err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(h), nil
-	*/
-	return coreunix.AddR(ipfs.node,fpath);
+	return ipfs.node.Pinning.Flush()
 }
+
+func (ipfs *Ipfs) GC() error {
+	// TODO Not using the cancel atm.
+	ctx, _ := context.WithCancel(context.Background())
+	// Not keeping track of removed keys atm.
+	return corerepo.GarbageCollect(ipfs.node,ctx)
+}
+
+func (ipfs *Ipfs) GCAsync() error {
+	// TODO Not using the cancel atm.
+	ctx, _ := context.WithCancel(context.Background())
+	// Not keeping track of removed keys atm.
+	_ , err := corerepo.GarbageCollectAsync(ipfs.node,ctx)
+	return err
+}
+
+/*
+func (ipfs *Ipfs) AddTree(fpath string) (string, error) {
+	
+	k, err := coreunix.AddR(ipfs.node,fpath);
+	return "0x" + hex.EncodeToString([]byte(k)), err
+}
+*/
 
 /*
 // Key manager functions.

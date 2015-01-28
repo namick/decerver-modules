@@ -161,9 +161,11 @@ func identityConfig(nbits int) (config.Identity, error) {
 	// currently storing key unencrypted. in the future we need to encrypt it.
 	// TODO(security)
 	skbytes, err := sk.Bytes()
+	
 	if err != nil {
 		return ident, err
 	}
+	
 	ident.PrivKey = base64.StdEncoding.EncodeToString(skbytes)
 
 	id, err := peer.IDFromPublicKey(pk)

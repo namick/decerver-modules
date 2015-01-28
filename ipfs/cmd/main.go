@@ -1,6 +1,6 @@
 package main
 
-// TODO update and clean up this file
+// This is a temporary "test" file.
 import (
 	"fmt"
 	"log"
@@ -8,16 +8,18 @@ import (
 	//"encoding/hex"
 	"github.com/eris-ltd/decerver-modules/ipfs/impl"
 	"github.com/jbenet/go-ipfs/util"
+	"os/user"
 )
 
 func main() {
 	
 	i := impl.NewIpfs()
-	err := i.Init("/home/androlo/ipfstest")
+	// Root path goes here.
+	err := i.Init("/user/androlo/ipfstest")
 	if err != nil {
 		log.Fatal(err)
 	}
-	start := time.Now()
+	
 	err = i.Start()
 	
 	if err != nil {
@@ -26,12 +28,10 @@ func main() {
 	
 	util.SetLogLevel("*", "warning")
 	
-	fmt.Println("startup took:", time.Since(start))
-
 	//c := "QmVHdqmE5x55kZaavWUmscLmieusDdZhQBP5mjZHwMB3U9"
 	//c := "Qmb8zwr341xu5uUWwxvVKbZs1ZbjJRJJ965tnV9HDeVUkH"
 	
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 2)
 	c := "QmVq6uMzsKg7x5mDEyLS5p5xiyTQ49LR8kFk1wnFDhodzz"
 	
 	fmt.Println("Testing block add/get.") 
@@ -59,6 +59,25 @@ func main() {
 	afFile, _ := i.GetFile(afHash)
 	
 	fmt.Println("Content of added file: " + string(afFile))
+	/*
+	atHash, _ := i.AddTree("./testfiles")
+	
+	fmt.Println("Hash of added directory: " + atHash)
+	
+	atFile, _ := i.GetFile(atHash)
+	
+	fmt.Println("Content of added dir: " + string(atFile))
+	*/
+	
+	err = i.Unpin(afHash)
+	if err != nil {
+		fmt.Println("Error with unpin: " + err.Error())
+	}
+	
+	err = i.GC()
+	if err != nil {
+		fmt.Println("Error with gc: " + err.Error())
+	}
 	
 	/*
 	g, _ := i.Get("tree", ipfs.B58ToHex("QmaKxiCScMY6BG1eq228F2fDJmjxZ53MJ8MtEyEJZr3v44"))
