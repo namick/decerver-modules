@@ -119,11 +119,10 @@ func (api *IpfsApi) GetBlock(hash string) scripting.SObject {
 }
 
 func (api *IpfsApi) GetFile(hash string) scripting.SObject {
-	reader, err := api.ipfs.GetFile(hash)
+	bts, err := api.ipfs.GetFile(hash)
 	if err != nil {
 		return scripting.JsReturnValErr(err)
 	}
-	bts, _ := ioutil.ReadAll(reader)
 	return scripting.JsReturnValNoErr(string(bts))
 }
 

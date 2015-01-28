@@ -56,7 +56,7 @@ func doInit(repoRoot string, force bool, nBitsForKeypair int) (*config.Config, e
 	if err != nil {
 		return nil, err
 	}
-
+	
 	return conf, nil
 }
 

@@ -34,6 +34,8 @@ func main() {
 	time.Sleep(time.Second * 3)
 	c := "QmVq6uMzsKg7x5mDEyLS5p5xiyTQ49LR8kFk1wnFDhodzz"
 	
+	fmt.Println("Testing block add/get.") 
+	
 	fmt.Println("c :" + c)
 	h, _ := impl.B58ToHex(c)
 	
@@ -49,6 +51,14 @@ func main() {
 	fmt.Println("a Base58: " + string(cah))
 	
 	fmt.Printf("a base58 == c: %t\n", string(cah) == c)
+	
+	afHash, _ := i.AddFile("./testfiles/test0.txt")
+	
+	fmt.Println("Hash of added file: " + afHash)
+	
+	afFile, _ := i.GetFile(afHash)
+	
+	fmt.Println("Content of added file: " + string(afFile))
 	
 	/*
 	g, _ := i.Get("tree", ipfs.B58ToHex("QmaKxiCScMY6BG1eq228F2fDJmjxZ53MJ8MtEyEJZr3v44"))

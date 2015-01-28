@@ -14,7 +14,7 @@ import (
 	fsrepo "github.com/jbenet/go-ipfs/repo/fsrepo"
 	"github.com/jbenet/go-ipfs/util"
 	"github.com/jbenet/go-ipfs/repo/config"
-	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -96,17 +96,18 @@ func (ipfs *Ipfs) GetBlock(hash string) ([]byte, error) {
 	return b.Data, nil
 }
 
-func (ipfs *Ipfs) GetFile(hash string) (io.Reader, error) {
+func (ipfs *Ipfs) GetFile(hash string) ([]byte, error) {
 	h, err := hexPath2B58(hash)
 	if err != nil {
 		return nil, err
 	}
 	// buf := bytes.NewBuffer(nil)
-	b, err := coreunix.Cat(ipfs.node, h) //cmds.Cat(ipfs.node, []string{h}, nil, buf)
+	reader, err := coreunix.Cat(ipfs.node, h) //cmds.Cat(ipfs.node, []string{h}, nil, buf)
 	if err != nil {
 		return nil, err
 	}
-	return b, nil
+	
+	return ioutil.ReadAll(reader) 
 }
 
 /*
@@ -183,7 +184,7 @@ func (ipfs *Ipfs) AddFile(fpath string) (string, error) {
 	}
 	defer file.Close()
 	k, err := coreunix.Add(ipfs.node,file)
-	return string(k), err
+	return "0x" + hex.EncodeToString([]byte(k)), err
 }
 
 func (ipfs *Ipfs) AddTree(fpath string, depth int) (string, error) {
