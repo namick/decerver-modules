@@ -7,6 +7,7 @@ import (
 	"github.com/eris-ltd/decerver/interfaces/files"
 	"github.com/eris-ltd/decerver/interfaces/modules"
 	"github.com/eris-ltd/decerver/interfaces/scripting"
+	"io/ioutil"
 	"path"
 )
 
@@ -36,7 +37,7 @@ func getDefaultConfig(rootDir string) *IpfsDecerverConfig {
 }
 
 func NewIpfsModule() *IpfsModule {
-	ipfs := &impl.Ipfs{}
+	ipfs := impl.NewIpfs()
 	mod := &IpfsModule{}
 	mod.ipfs = ipfs
 	mod.ipfsApi = &IpfsApi{ipfs}
@@ -118,11 +119,12 @@ func (api *IpfsApi) GetBlock(hash string) scripting.SObject {
 }
 
 func (api *IpfsApi) GetFile(hash string) scripting.SObject {
-	data, err := api.ipfs.GetFile(hash)
+	reader, err := api.ipfs.GetFile(hash)
 	if err != nil {
 		return scripting.JsReturnValErr(err)
 	}
-	return scripting.JsReturnValNoErr(string(data))
+	bts, _ := ioutil.ReadAll(reader)
+	return scripting.JsReturnValNoErr(string(bts))
 }
 
 func (api *IpfsApi) GetTree(hash string, depth int) scripting.SObject {
@@ -133,21 +135,21 @@ func (api *IpfsApi) GetTree(hash string, depth int) scripting.SObject {
 // Deprecated. Use PushBlock instead.
 func (api *IpfsApi) PushBlockString(block string) scripting.SObject {
 	fmt.Println("IPFS Module: Use of deprecated function 'PushBlockString'.")
-	block, err := api.ipfs.PushBlockString(block)
+	block, err := api.ipfs.AddBlockString(block)
 	return scripting.JsReturnVal(block, err)
 }
 
 func (api *IpfsApi) PushBlock(block string) scripting.SObject {
-	block, err := api.ipfs.PushBlockString(block)
+	block, err := api.ipfs.AddBlockString(block)
 	return scripting.JsReturnVal(block, err)
 }
 
 func (api *IpfsApi) PushFile(fpath string) scripting.SObject {
-	f, err := api.ipfs.PushFile(fpath)
+	f, err := api.ipfs.AddFile(fpath)
 	return scripting.JsReturnVal(f, err)
 }
 
 func (api *IpfsApi) PushTree(fpath string, depth int) scripting.SObject {
-	tree, err := api.ipfs.PushTree(fpath, depth)
+	tree, err := api.ipfs.AddTree(fpath, depth)
 	return scripting.JsReturnVal(tree, err)
 }

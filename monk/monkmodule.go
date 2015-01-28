@@ -55,7 +55,6 @@ func (mm *MonkModule) Start() error {
 
 // Shut down the module.
 func (mm *MonkModule) Shutdown() error {
-	
 	return mm.monk.Shutdown()
 }
 
