@@ -202,7 +202,6 @@ func (mapi *MonkApi) Tx(addr, amt string) scripting.SObject {
 }
 
 func (mapi *MonkApi) Msg(addr string, data []interface{}) scripting.SObject {
-	fmt.Printf("MESSAGE DATA: %v\n", data)
 	indata := make([]string, 0)
 
 	if data != nil && len(data) > 0 {
@@ -215,7 +214,6 @@ func (mapi *MonkApi) Msg(addr string, data []interface{}) scripting.SObject {
 		}
 	}
 	hash, err := mapi.monk.Msg(addr, indata)
-	fmt.Println("HASH: " + hash)
 	ret := make(scripting.SObject)
 	if err == nil {
 		ret["Hash"] = "0x" + hash // Might as well

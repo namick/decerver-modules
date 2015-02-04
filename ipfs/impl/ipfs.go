@@ -55,7 +55,7 @@ func (ipfs *Ipfs) Init(rootDir string) error {
 	ipfs.root = rootDir
 	
 	// TODO add settings later.
-	util.SetLogLevel("*", "debug")
+	//util.SetLogLevel("*", "debug")
 	fmt.Println("IPFS: init done")
 	return nil
 }
@@ -65,7 +65,7 @@ func (ipfs *Ipfs) Start() error {
 	ctx := context.Background()
 	r := fsrepo.At(ipfs.root)
 	r.Open()
-	n, err := core.NewIPFSNode(ctx, core.Online(r))
+	n, err := core.NewIPFSNode(ctx, core.Offline(r))
 	if err != nil {
 		return err
 	}

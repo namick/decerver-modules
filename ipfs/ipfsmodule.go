@@ -7,7 +7,6 @@ import (
 	"github.com/eris-ltd/decerver/interfaces/files"
 	"github.com/eris-ltd/decerver/interfaces/modules"
 	"github.com/eris-ltd/decerver/interfaces/scripting"
-	"io/ioutil"
 	"path"
 )
 
