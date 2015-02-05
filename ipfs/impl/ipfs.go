@@ -55,7 +55,8 @@ func (ipfs *Ipfs) Init(rootDir string) error {
 	ipfs.root = rootDir
 	
 	// TODO add settings later.
-	//util.SetLogLevel("*", "debug")
+	util.SetDebugLogging()
+	fmt.Println("Setting debug logging")
 	fmt.Println("IPFS: init done")
 	return nil
 }
