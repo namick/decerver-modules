@@ -14,6 +14,7 @@ import (
 	fsrepo "github.com/jbenet/go-ipfs/repo/fsrepo"
 	"github.com/jbenet/go-ipfs/util"
 	"github.com/jbenet/go-ipfs/repo/config"
+	logging "github.com/jbenet/go-ipfs/Godeps/_workspace/src/github.com/jbenet/go-logging"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -55,7 +56,7 @@ func (ipfs *Ipfs) Init(rootDir string) error {
 	ipfs.root = rootDir
 	
 	// TODO add settings later.
-	util.SetDebugLogging()
+	util.SetAllLoggers(logging.DEBUG)
 	fmt.Println("Setting debug logging")
 	fmt.Println("IPFS: init done")
 	return nil
