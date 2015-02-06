@@ -30,9 +30,9 @@ func NewMonkModule() *MonkModule {
 	monk := monk.NewMonk(nil)
 	mapi := &MonkApi{monk}
 	return &MonkModule{
-		monk : monk, 
-		temp : &TempProps{}, 
-		mapi : mapi, 
+		monk: monk,
+		temp: &TempProps{},
+		mapi: mapi,
 	}
 }
 
@@ -55,30 +55,31 @@ func (mm *MonkModule) Start() error {
 
 // Shut down the module.
 func (mm *MonkModule) Shutdown() error {
-	
+
 	return mm.monk.Shutdown()
 }
 
 func (mm *MonkModule) Restart() error {
 	err := mm.Shutdown()
-	
+
 	if err != nil {
 		return nil
 	}
-	
+
 	mm.monk = monk.NewMonk(nil)
 	mm.mapi.monk = mm.monk
-	
+
 	// Inject the config:
 	mm.monk.SetProperty("RootDir", mm.temp.RootDir)
 	mm.monk.SetProperty("ChainId", mm.temp.ChainId)
 	mm.monk.SetProperty("RemoteHost", mm.temp.RemoteHost)
 	mm.monk.SetProperty("RemotePort", mm.temp.RemotePort)
-	
+	mm.monk.SetProperty("LogLevel", 5)
+	mm.monk.SetProperty("UseSeed", true)
 	mm.monk.Init()
-	
+
 	err2 := mm.monk.Start()
-	
+
 	mm.temp.ChainId = ""
 	mm.temp.RemoteHost = ""
 	mm.temp.RemotePort = 0
