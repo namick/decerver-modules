@@ -117,8 +117,8 @@ func (api *IpfsApi) GetBlock(hash string) scripting.SObject {
 	return scripting.JsReturnValNoErr(string(data))
 }
 
-func (api *IpfsApi) GetFile(fileName string) scripting.SObject {
-	bts, err := api.ipfs.GetFile(fileName)
+func (api *IpfsApi) GetFile(hash string) scripting.SObject {
+	bts, err := api.ipfs.GetFile(hash)
 	if err != nil {
 		return scripting.JsReturnValErr(err)
 	}

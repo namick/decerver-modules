@@ -14,7 +14,7 @@ import (
 	fsrepo "github.com/jbenet/go-ipfs/repo/fsrepo"
 	"github.com/jbenet/go-ipfs/util"
 	"github.com/jbenet/go-ipfs/repo/config"
-	logging "github.com/jbenet/go-ipfs/Godeps/_workspace/src/github.com/jbenet/go-logging"
+	//logging "github.com/jbenet/go-ipfs/Godeps/_workspace/src/github.com/jbenet/go-logging"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -56,7 +56,7 @@ func (ipfs *Ipfs) Init(rootDir string) error {
 	ipfs.root = rootDir
 	
 	// TODO add settings later.
-	util.SetAllLoggers(logging.DEBUG)
+	//util.SetAllLoggers(logging.WARNING)
 	fmt.Println("Setting debug logging")
 	fmt.Println("IPFS: init done")
 	return nil
@@ -67,7 +67,7 @@ func (ipfs *Ipfs) Start() error {
 	ctx := context.Background()
 	r := fsrepo.At(ipfs.root)
 	r.Open()
-	n, err := core.NewIPFSNode(ctx, core.Offline(r))
+	n, err := core.NewIPFSNode(ctx, core.Online(r))
 	if err != nil {
 		return err
 	}
@@ -99,10 +99,12 @@ func (ipfs *Ipfs) GetBlock(hash string) ([]byte, error) {
 }
 
 func (ipfs *Ipfs) GetFile(hash string) ([]byte, error) {
-	h, err := hexPath2B58(hash)
+	fmt.Println("IPFS HASH: " + hash)
+	h, err := HexToB58(hash)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("IPFS B58: " + h)
 	// buf := bytes.NewBuffer(nil)
 	reader, err := coreunix.Cat(ipfs.node, h) //cmds.Cat(ipfs.node, []string{h}, nil, buf)
 	if err != nil {
@@ -173,7 +175,8 @@ func (ipfs *Ipfs) AddBlock(data []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return hex.EncodeToString([]byte(k)), nil
+	fmt.Printf("IPFS B58 HASH: %v\n", k);
+	return "0x" + hex.EncodeToString([]byte(k)), nil
 }
 
 func (ipfs *Ipfs) AddBlockString(data string) (string, error) {
@@ -187,7 +190,8 @@ func (ipfs *Ipfs) AddFile(fpath string) (string, error) {
 	}
 	defer file.Close()
 	k, err := coreunix.Add(ipfs.node,file)
-	return "0x" + hex.EncodeToString([]byte(k)), err
+	ret, err := B58ToHex(k)
+	return ret, err
 }
 
 func (ipfs *Ipfs) Unpin(hash string) error {
