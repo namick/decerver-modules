@@ -73,6 +73,8 @@ func (mm *MonkModule) Restart() error {
 	mm.monk.SetProperty("ChainId", mm.temp.ChainId)
 	mm.monk.SetProperty("RemoteHost", mm.temp.RemoteHost)
 	mm.monk.SetProperty("RemotePort", mm.temp.RemotePort)
+	mm.monk.SetProperty("LogLevel", 5)
+	mm.monk.SetProperty("UseSeed", true)
 	
 	mm.monk.Init()
 	
