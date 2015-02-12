@@ -360,7 +360,7 @@ esl.array = {
 
 	//Gets
 	"ESize" : function(addr, name){
-		return esl.SA(addr, this.EsizeSlot(name));
+		return esl.SA(addr, this.ESizeslot(name));
 	},
 
 	"MaxE" : function(addr, name, key){
@@ -369,19 +369,17 @@ esl.array = {
 	
 	"Element" : function(addr, name, key, index){
 		var Esize = this.ESize(addr, name);
-		if(this.MaxE(addr, name, key) > index){
-			return "0";
+		if(LT(this.MaxE(addr, name, key),index)){
+			return "0x0";
 		}
-
 		if(Esize == "0x100"){
-			return esl.SA(addr, Add(index, this.StartOffset));
+			return esl.SA(addr, Add(index, this.StartSlot(name,key)));
 		}else{
 			var eps = Div("0x100",Esize);
 			var pos = Mod(index, eps);
-			var row = Add(Mod(Div(index, eps),"0xFFFF"), this.StartOffset);
-
+			var row = Add(Mod(Div(index, eps),"0xFFFF"), this.StartSlot(name,key));
 			var sval = esl.SA(addr, row);
-			return Mod(Div(sval, Exp(Esize, pos)), Exp("2", Esize)); 
+			return Mod(Div(sval, Exp("2",Mul(Esize, pos))), Exp("2", Esize));
 		}
 	},
 };
